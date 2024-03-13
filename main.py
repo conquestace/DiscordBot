@@ -2,8 +2,10 @@ import discord
 import os
 from dotenv import load_dotenv
 import requests
-import asyncio
+#import asyncio
 import random
+#import novelai_api
+#import sd_api
 
 
 load_dotenv()
@@ -20,13 +22,25 @@ def reso():
         return width, height
 
 # Function to communicate with the image generation program
-def communicate_with_image_generation_program(prompt, width, height):
+def novelapi(prompt, width, height):
     url = 'http://localhost:5000/generate_image'  # Update the URL if needed
     data = {'prompt': prompt, 'width': width, 'height': height}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.content  # Return the image data
     else:
+        return None
+    
+def StableApi(prompt, width, height):
+    url = 'http://localhost:5002/generate_image'  # Update the URL if needed
+    data = {'prompt': prompt, 'width': width, 'height': height}
+    
+    try:
+        response = requests.post(url, json=data)  
+        response.raise_for_status()  # Raise an exception for non-2xx status codes
+        return response.content  # Return the image data
+    except requests.RequestException as e:
+        print(f"Request error: {e}")
         return None
 
 # Offline to Online
@@ -52,11 +66,22 @@ async def on_message(message):
 
     elif message.content.lower() == "bake a cirno":
         await message.channel.send("Sure, gimme a sec...")
-        files = os.listdir('./generate_image')
+        files = os.listdir('./pre_generated')
         # Choose a random file
         random_file = random.choice(files)
         # Send the randomly chosen file
-        await message.channel.send(file=discord.File(f'./generate_image/{random_file}'))
+        await message.channel.send(file=discord.File(f'./pre_generated/{random_file}'))
+
+    elif message.content.lower() == "bake a cirno slowly":
+        await message.channel.send("Sure, gimme a min...")
+        path='./output.png'
+        # Send the generated image back to the Discord channel
+        prompt = "cirno, touhou, blue eyes, blue hair, pinafore dress, ice wings, hair bow, blue bow,"
+        width, height = reso()  # Example width and height
+        image_data = StableApi(prompt, width, height)
+        if image_data:
+            # Send the generated image back to the Discord channel
+            await message.channel.send(file=discord.File(path, "output.png"))
 
     elif message.content.lower() == "bake a cirno pls":
         await message.channel.send("Sure, gimme a sec...")
@@ -64,7 +89,7 @@ async def on_message(message):
         prompt = "cirno, touhou, blue eyes, blue hair, pinafore dress, ice wings, hair bow, blue bow,"
         width, height = reso()  # Example width and height
         # Communicate with the image generation program
-        image_data = communicate_with_image_generation_program(prompt, width, height)
+        image_data = novelapi(prompt, width, height)
         path='./results/image.png'
         if image_data:
             # Send the generated image back to the Discord channel
@@ -75,3 +100,4 @@ async def on_message(message):
 
 #run
 bot.run(DISCORD_TOKEN)
+
