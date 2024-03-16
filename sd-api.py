@@ -21,7 +21,7 @@ class StableError(Exception):
 
 class StableAPI:
 
-    url = "http://10.0.0.28:7860"
+    url = "http://localhost:7860"
     TIMEOUT = 100
 
     @classmethod
